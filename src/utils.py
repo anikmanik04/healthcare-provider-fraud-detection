@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 import joblib
 import os
+import pickle
+import sys
+from src.exception import CustomException
+from src.logger import logging
 
 def create_feature_using_groupby(df, gruopby_col, operation_col,operation):
     '''
@@ -216,3 +220,23 @@ def preprocess_data(Provider, Beneficiary, Inpatient, Outpatient):
         Final_Dataset_Provider  = Final_Dataset_FE.groupby(['Provider'],as_index=False).agg('sum')
         return Final_Dataset_Provider
     
+
+def load_object(file_path):
+    try:
+        with open(file_path, "rb") as file_obj:
+            return pickle.load(file_obj)
+
+    except Exception as e:
+        logging.info(CustomException(e, sys))
+    
+def save_object(file_path, obj):
+    try:
+        dir_path = os.path.dirname(file_path)
+
+        os.makedirs(dir_path, exist_ok=True)
+
+        with open(file_path, "wb") as file_obj:
+            pickle.dump(obj, file_obj)
+
+    except Exception as e:
+        logging.info(CustomException(e, sys))
