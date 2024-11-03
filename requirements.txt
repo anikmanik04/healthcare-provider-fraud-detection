@@ -8,4 +8,5 @@ xgboost
 Flask
 dill
 mlxtend
+imblearn
 # -e .

@@ -4,8 +4,10 @@ import joblib
 import os
 import pickle
 import sys
+from sklearn.model_selection import GridSearchCV
 from src.exception import CustomException
 from src.logger import logging
+from sklearn.metrics import f1_score
 
 def create_feature_using_groupby(df, gruopby_col, operation_col,operation):
     '''
@@ -240,3 +242,36 @@ def save_object(file_path, obj):
 
     except Exception as e:
         logging.info(CustomException(e, sys))
+
+def evaluate_models(X_train, y_train, X_test, y_test, models, params, threshold=0.5):
+    try:
+        report = {}
+
+        model_list = list(models.values())
+        models_params_list = list(models.keys())
+        for i in range(len(model_list)):
+            model = model_list[i]
+            param=params[models_params_list[i]]
+
+            gs = GridSearchCV(model, param, cv=3)
+            gs.fit(X_train,y_train)
+
+            model.set_params(**gs.best_params_)
+            
+            # model.fit(X_train, y_train)  # Train model
+            model.fit(X_train,y_train)
+
+            y_train_pred_proba = model.predict_proba(X_train)[:,1]
+            y_train_pred = [1 if p>=threshold else 0 for p in y_train_pred_proba]
+            y_test_pred_proba = model.predict_proba(X_test)[:,1]
+            y_test_pred = [1 if p>=threshold else 0 for p in y_test_pred_proba]
+
+            train_f1_score = f1_score(y_train, y_train_pred)
+            test_f1_score = f1_score(y_test, y_test_pred)
+
+            report[models_params_list[i]] = test_f1_score
+
+        return report
+
+    except Exception as e:
+        raise CustomException(e, sys)
